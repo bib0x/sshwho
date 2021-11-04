@@ -32,30 +32,38 @@ func ProcessInventory(c *Config) {
 }
 
 func ProcessAuthLog(c *Config) {
-      inventory := NewInventory(c.KeyPath, "")
-      if c.KeyPath == KEYPATH {
-          inventory = NewInventory(c.KeyPath, c.InventoryInPath)
-      }
+    inventory := NewInventory(c.KeyPath, "")
+    if c.KeyPath == KEYPATH {
+        inventory = NewInventory(c.KeyPath, c.InventoryInPath)
+    }
 
-      var logs []Log
+    var logs []Log
 
-      if c.Server != "" {
-         client := NewSshClient(c.Server)
-         logs, _ = NewLogs(c.LogFile, "Accepted", client)
-         client.Close()
-      } else {
-          logs, _ = NewLogs(c.LogFile, "Accepted", nil)
-      }
+    if c.Server != "" {
+       client := NewSshClient(c.Server)
+       logs, _ = NewLogs(c.LogFile, "Accepted", client)
+       client.Close()
+    } else {
+        logs, _ = NewLogs(c.LogFile, "Accepted", nil)
+    }
 
-      for _, l := range logs {
-          message := l.Format("")
+    for _, l := range logs {
+        message := l.Format("")
+        // if no inventory
+        if len(inventory.Fingerprints) == 0 {
+          fmt.Println(message)
+        } else {
           for  _, fingerprint := range inventory.Fingerprints {
-              if l.Fingerprint == fingerprint.SHA256  || l.Fingerprint == fingerprint.MD5 {
-                  message = l.Format(fingerprint.Username)
-                  fmt.Println(message)
-              }
+            if l.Fingerprint == fingerprint.SHA256  || l.Fingerprint == fingerprint.MD5 {
+              message = l.Format(fingerprint.Username)
+              fmt.Println(message)
+            } else {
+              // if no match found in inventory
+              fmt.Println(message)
+            }
           }
-      }
+        }
+    }
 }
 
 func main() {
