@@ -32,38 +32,36 @@ func ProcessInventory(c *Config) {
 }
 
 func ProcessAuthLog(c *Config) {
-    if c.LogFile != "" {
-        inventory := NewInventory(c.KeyPath, "")
-        if c.KeyPath == KEYPATH {
-            inventory = NewInventory(c.KeyPath, c.InventoryInPath)
-        }
+      inventory := NewInventory(c.KeyPath, "")
+      if c.KeyPath == KEYPATH {
+          inventory = NewInventory(c.KeyPath, c.InventoryInPath)
+      }
 
-        var logs []Log
+      var logs []Log
 
-        if c.Server != "" {
-           client := NewSshClient(c.Server)
-           logs, _ = NewLogs(c.LogFile, "Accepted", client)
-           client.Close()
-        } else {
-            logs, _ = NewLogs(c.LogFile, "Accepted", nil)
-        }
+      if c.Server != "" {
+         client := NewSshClient(c.Server)
+         logs, _ = NewLogs(c.LogFile, "Accepted", client)
+         client.Close()
+      } else {
+          logs, _ = NewLogs(c.LogFile, "Accepted", nil)
+      }
 
-        for _, l := range logs {
-            message := l.Format("")
-            for  _, fingerprint := range inventory.Fingerprints {
-                if l.Fingerprint == fingerprint.SHA256  || l.Fingerprint == fingerprint.MD5 {
-                    message = l.Format(fingerprint.Username)
-                    fmt.Println(message)
-                }
-            }
-        }
-    }
+      for _, l := range logs {
+          message := l.Format("")
+          for  _, fingerprint := range inventory.Fingerprints {
+              if l.Fingerprint == fingerprint.SHA256  || l.Fingerprint == fingerprint.MD5 {
+                  message = l.Format(fingerprint.Username)
+                  fmt.Println(message)
+              }
+          }
+      }
 }
 
 func main() {
     // Default configuration
     var c = Config{ AsJson: false }
-    
+
     default_keypath := os.Getenv("SSHWHO_KEYPATH")
     if default_keypath == "" {
         default_keypath = KEYPATH
@@ -73,7 +71,9 @@ func main() {
     if default_inv == "" {
         default_inv = INVENTORY
     }
-    
+
+    default_logfile := "/var/log/auth.log"
+
     // Gather first argument and remove it
     // It enables to modify os.Args before calling flag.Parse()
     // in order to have git-style command line argument
@@ -93,7 +93,7 @@ func main() {
 
     // log file
     flag.StringVar(&c.Server, "s", "", "SSH connection string to remote server")
-    flag.StringVar(&c.LogFile, "f", "", "Auth log file path to analyze")
+    flag.StringVar(&c.LogFile, "f", default_logfile, "Auth log file path to analyze")
 
     // output
     flag.BoolVar(&c.AsJson, "j", false, "JSON output")
@@ -111,19 +111,18 @@ func main() {
         fmt.Printf("  -k string\n")
         fmt.Printf("    	Key path as directory or file (default %s)\n", default_keypath)
         fmt.Printf("  -i string\n")
-        fmt.Printf("    	JSON file where to read inventory data from (default %s)\n", default_inv) 
+        fmt.Printf("    	JSON file where to read inventory data from (default %s)\n", default_inv)
         fmt.Printf("  -j	JSON output\n\n")
 
         fmt.Printf("analyze:\n")
         fmt.Printf("  -k string\n")
         fmt.Printf("    	Key path as directory or file (default %s)\n", default_keypath)
         fmt.Printf("  -i string\n")
-        fmt.Printf("    	JSON file where to read inventory data from (default %s)\n", default_inv) 
+        fmt.Printf("    	JSON file where to read inventory data from (default %s)\n", default_inv)
         fmt.Printf("  -f    string\n")
-        fmt.Printf("        Auth log file path to analayze\n")
+        fmt.Printf("        Auth log file path to analayze (default %s)\n", default_logfile)
         fmt.Printf("  -s    string\n")
         fmt.Printf("        SSH connection string to remote server such as [user@]host[:port]\n")
-
     }
 
     flag.Parse()
