@@ -5,30 +5,26 @@ import (
     "bytes"
     "fmt"
     "os"
+    "regexp"
     "strconv"
     "strings"
 
     "golang.org/x/crypto/ssh"
 )
 
-
 const (
-    Month       int = iota
-    Day
-    Hour
-    Server
-    _
-    _
-    Type
-    _
-    User
-    _
-    Ip
-    _
-    Port
-    Version
-    Algo
-    Hash
+  Month         int = iota + 1
+  Day
+  Hour
+  Server
+  _
+  Type
+  User
+  Ip
+  Port
+  Version
+  Algo
+  Hash
 )
 
 type Log struct {
@@ -45,34 +41,35 @@ type Log struct {
 type Logs []Log
 
 func NewLog(line string) (Log, error) {
-    parts := strings.Split(line, " ")
+    regPattern := `(?P<month>.*)\s+(?P<day>.*) (?P<hour>.*) (?P<hostname>.*) (?P<_>.*): Accepted (?P<type>.*) for (?P<user>.*) from (?P<ip>.*) port (?P<port>.*) (?P<version>.*): (?P<algo>.*) (?P<data>.*)`
+    re := regexp.MustCompile(regPattern)
+    matches := re.FindStringSubmatch(line)
 
-    if len(parts) < Type {
+    if len(matches) < Type {
         return Log{}, fmt.Errorf("Malformed log line, no type field.")
     }
 
     var match Log
- 
-    if parts[Type] == "publickey" || parts[Type] == "password" {
-        port, err := strconv.Atoi(parts[Port])
+    if matches[Type] == "publickey" || matches[Type] == "password" {
+        port, err := strconv.Atoi(matches[Port])
         if err != nil { return Log{}, err }
         match = Log{
-            Date: fmt.Sprintf("%s %s %s", parts[Month], parts[Day], parts[Hour]),
-            Target: parts[Server],
-            Username: parts[User],
-            From: parts[Ip],
+            Date: fmt.Sprintf("%s %s %s", matches[Month], matches[Day], matches[Hour]),
+            Target: matches[Server],
+            Username: matches[User],
+            From: matches[Ip],
             Port: port,
-            Type: parts[Type],
+            Type: matches[Type],
         }
-        if parts[Type] == "publickey" {
-            match.Algo = parts[Algo]
-            match.Fingerprint = parts[Hash]
+        if matches[Type] == "publickey" {
+            match.Algo = matches[Algo]
+            match.Fingerprint = matches[Hash]
         }
     } else {
         err := fmt.Errorf("Log type not managed.")
         return Log{}, err
     }
-    return match, nil 
+    return match, nil
 }
 
 func NewLogs(logfile string, pattern string, client *ssh.Client) ([]Log, error) {
@@ -137,6 +134,6 @@ func (m *Log) Format(username string) string {
     if m.Type == "publickey" {
         using = m.Fingerprint
     }
-    
+
     return fmt.Sprintf("[+] %s %s connected to %s from %s using %s", m.Date, u, m.Target, m.From, using) 
 }
