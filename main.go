@@ -51,17 +51,20 @@ func ProcessAuthLog(c *Config) {
         message := l.Format("")
         // if no inventory
         if len(inventory.Fingerprints) == 0 {
-          fmt.Println(message)
+            fmt.Println(message)
         } else {
-          for  _, fingerprint := range inventory.Fingerprints {
-            if l.Fingerprint == fingerprint.SHA256  || l.Fingerprint == fingerprint.MD5 {
-              message = l.Format(fingerprint.Username)
-              fmt.Println(message)
-            } else {
-              // if no match found in inventory
-              fmt.Println(message)
+            found := false
+            for  _, fingerprint := range inventory.Fingerprints {
+                if l.Fingerprint == fingerprint.SHA256  || l.Fingerprint == fingerprint.MD5 {
+                    message = l.Format(fingerprint.Username)
+                    fmt.Println(message)
+                    found = true
+                }
             }
-          }
+            if !found {
+                // if no match found in inventory
+                fmt.Println(message)
+            }
         }
     }
 }
