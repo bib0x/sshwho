@@ -17,6 +17,13 @@ SSHWHO_INVENTORY  = '/tmp/sshwho.json'
 SSHWHO_KEYS       = '/tmp/keys'
 ```
 
+### Environment variable
+
+```
+export SSHWHO_INVENTORY=/tmp/sshwho.json
+export SSHWHO_KEYPATH=$HOME/dev/lab/keys
+```
+
 ### Inventory
 
 ```
