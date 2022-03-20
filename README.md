@@ -8,14 +8,45 @@ according to a public keys inventory.
 It can be useful to audit `root` user connection on a server based 
 on a set of known keys.
 
-## Example
+## Build
 
-### Default variables
+### Manual
 
+```bash
+$ go build && go install
 ```
-SSHWHO_INVENTORY  = '/tmp/sshwho.json'
-SSHWHO_KEYS       = '/tmp/keys'
+
+### NixOS
+
+```bash
+$ cat default.nix
+{ lib, buildGoModule, fetchFromGitHub }:
+
+buildGoModule rec {
+  pname = "sshwho";
+  version = "0.1.0";
+
+  src = fetchFromGitHub {
+    owner = "bib0x";
+    repo = "sshwho";
+    rev = "v${version}";
+    sha256 = "10qzzbrnx7yzvrxvshx0nmd8skx9w4wbkbak00f82s1nyxii9jrz";
+  };
+
+  vendorSha256 = "03jnps2wg4n4bw2sy8r9mm83apnlw4fs1cn9nsmbbrr41s8i4b54";
+
+  meta = with lib; {
+    description = "SSH auth.log analyzer based on SSH public keys inventory";
+    homepage = "https://github.com/bib0x/sshwho";
+    license = licenses.mit;
+    maintainers = with maintainers; [ bib0x ];
+    platforms = platforms.linux;
+  };
+
+}
 ```
+
+## Configuration
 
 ### Environment variable
 
@@ -24,9 +55,14 @@ export SSHWHO_INVENTORY=/tmp/sshwho.json
 export SSHWHO_KEYPATH=$HOME/dev/lab/keys
 ```
 
+## Example
+
 ### Inventory
 
 ```
+$ export SSHWHO_INVENTORY=/tmp/sshwho.json
+$ export SSHWHO_KEYPATH=/tmp/keys
+
 # Create inventory based on default configuration
 $ sshwho inv
 
